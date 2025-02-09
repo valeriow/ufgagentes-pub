@@ -24,14 +24,25 @@ git clone [url-do-repositorio]
 cd [nome-do-diretorio]
 ```
 
-2. Instale as dependências:
+2. Crie e ative um ambiente virtual:
 ```sh
-pip install fastapi litellm uvicorn PyJWT PyPDF2
+# Linux/MacOS
+python -m venv venv
+source venv/bin/activate
+
+# Windows
+python -m venv venv
+.\venv\Scripts\activate
 ```
 
-3. Configure as variáveis de ambiente:
+3. Instale as dependências:
+```sh
+pip install -r requirements.txt
+```
+
+4. Configure as variáveis de ambiente:
 - Crie um arquivo `.env` na raiz do projeto
-- Adicione suas variáveis conforme o exemplo em `.env.example`
+- Adicione suas variáveis conforme o exemplo em `.env.sample`
 
 ## Configuração
 
