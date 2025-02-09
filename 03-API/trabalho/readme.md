@@ -110,10 +110,105 @@ pytest tests/
 ## Deploy
 
 ### Docker
+
+#### Preparação do Ambiente
+
+1. Certifique-se de ter o Docker instalado:
+```sh
+docker --version
+```
+
+2. Crie um arquivo `.env` para as variáveis de ambiente:
+```sh
+# Production Environment Variables
+DATABASE_URL=sqlite:///./app.db
+SECRET_KEY=your-secure-secret-key
+MODEL_NAME=gpt-3.5-turbo
+LOG_LEVEL=INFO
+```
+
+#### Construção e Execução com Docker
+
+1. Construa a imagem Docker:
+```sh
+# Versão básica
+docker build -t ementa-api .
+
+# Com tag de versão
+docker build -t ementa-api:1.0.0 .
+```
+
+2. Execute o container:
+```sh
+# Modo básico
+docker run -d \
+  --name ementa-api \
+  -p 8000:8000 \
+  --env-file .env \
+  ementa-api
+
+# Com persistência de dados
+docker run -d \
+  --name ementa-api \
+  -p 8000:8000 \
+  --env-file .env \
+  -v $(pwd)/data:/app/data \
+  ementa-api
+```
+
+#### Gerenciamento do Container
+
+```sh
+# Verificar status
+docker ps -a | grep ementa-api
+
+# Logs em tempo real
+docker logs -f ementa-api
+
+# Reiniciar container
+docker restart ementa-api
+
+# Parar container
+docker stop ementa-api
+
+# Remover container
+docker rm ementa-api
+
+# Remover imagem
+docker rmi ementa-api
+```
+
+#### Atualização
+
+1. Pare e remova o container atual:
+```sh
+docker stop ementa-api
+docker rm ementa-api
+```
+
+2. Reconstrua a imagem com as alterações:
 ```sh
 docker build -t ementa-api .
-docker run -p 8000:8000 ementa-api
 ```
+
+3. Inicie um novo container:
+```sh
+docker run -d \
+  --name ementa-api \
+  -p 8000:8000 \
+  --env-file .env \
+  -v $(pwd)/data:/app/data \
+  ementa-api
+```
+
+#### Dicas de Produção
+
+- Use um registry privado para armazenar suas imagens
+- Implemente health checks
+- Configure limites de recursos (CPU/memória)
+- Use redes Docker dedicadas
+- Faça backup regular dos dados
+- Monitore logs e métricas
 
 ### Produção
 - Use HTTPS
