@@ -1,0 +1,8 @@
+fastapi
+litellm
+uvicorn
+PyJWT
+PyPDF2
+sqlalchemy
+passlib
+python-multipart
