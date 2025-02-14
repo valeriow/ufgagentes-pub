@@ -27,19 +27,3 @@ LOG_FORMAT = '%(asctime)s - %(levelname)s - %(message)s'
 
 # Security Settings
 TOKEN_EXPIRE_HOURS = 1
-
-# Cache Settings
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-
-# Rate Limiting
-RATE_LIMIT_DEFAULT = "30/minute"
-RATE_LIMIT_LOGIN = "5/minute"
-
-# Pagination
-DEFAULT_PAGE_SIZE = 10
-MAX_PAGE_SIZE = 100
-
-# CORS Settings
-ALLOWED_ORIGINS = ["*"]
-ALLOWED_METHODS = ["*"]
-ALLOWED_HEADERS = ["*"]

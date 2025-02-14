@@ -21,15 +21,3 @@ class UserCreate(UserBase):
 class UserUpdate(UserBase):
     password: Optional[str] = None
 
-class UserResponse(UserBase):
-    id: int
-    
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "id": 1,
-                "username": "user1",
-                "role": "user"
-            }
-        }
-

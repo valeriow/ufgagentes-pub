@@ -55,7 +55,15 @@ Ajuste as configurações no arquivo `settings.py`:
 
 ## Uso
 
-1. Inicie o servidor:
+1. Inicie o servidor com :
+
+Para desenvolvimento:
+```sh
+fastapi dev main.py
+```
+ou
+
+Para produção:
 ```sh
 uvicorn main:app --reload
 ```
@@ -68,22 +76,33 @@ uvicorn main:app --reload
 
 ### Autenticação
 
-- `POST /auth/token` - Obter token JWT
+- `POST /auth/login` - Fazer login e obter token JWT
 - `POST /auth/refresh` - Renovar token JWT
+- `GET /auth/status` - Verificar status da autenticação
 
 ### Usuários
 
-- `POST /users/` - Criar usuário
-- `GET /users/me` - Obter dados do usuário atual  
+- `POST /users/` - Criar novo usuário
+- `GET /users/me` - Obter dados do usuário atual
+- `GET /users/{id}` - Obter usuário por ID
 - `PUT /users/{id}` - Atualizar usuário
 - `DELETE /users/{id}` - Deletar usuário
+- `GET /users/` - Listar todos usuários (admin)
 
 ### Ementas
 
 - `POST /ementas/text` - Gerar ementa a partir de texto
 - `POST /ementas/pdf` - Gerar ementa a partir de PDF
 - `GET /ementas/{id}` - Obter ementa por ID
-- `GET /ementas/` - Listar ementas geradas
+- `GET /ementas/` - Listar todas ementas
+- `DELETE /ementas/{id}` - Deletar ementa
+- `PUT /ementas/{id}` - Atualizar ementa
+
+### Sistema
+
+- `GET /health` - Verificar status do sistema
+- `GET /metrics` - Obter métricas do sistema (admin)
+- `GET /logs` - Consultar logs do sistema (admin)
 
 ## Logging
 
@@ -123,7 +142,7 @@ docker --version
 # Production Environment Variables
 DATABASE_URL=sqlite:///./app.db
 SECRET_KEY=your-secure-secret-key
-MODEL_NAME=gpt-3.5-turbo
+MODEL_NAME=gpt-4o-mini
 LOG_LEVEL=INFO
 ```
 

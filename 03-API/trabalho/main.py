@@ -1,5 +1,6 @@
-from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Query, Path, status, Request
+from fastapi import FastAPI, Depends, UploadFile, File, Query, Path, status, Request
 from fastapi.openapi.utils import get_openapi
+from fastapi.params import Body
 from fastapi.routing import APIRouter
 import logging
 import jwt
@@ -10,7 +11,6 @@ from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
-from typing import Any
 import textwrap
 
 
@@ -25,9 +25,7 @@ from database import DatabaseHandler, get_db, get_log_db
 from models.logs import LogEntry
 
 from models import (
-    User, UserResponse,
-    Acordao, AcordaoResponse,
-    Token, Message
+    User, Acordao
 )
 
 from auth import check_admin_access, check_user_access
@@ -39,6 +37,9 @@ console_handler = logging.StreamHandler()
 console_handler.setFormatter(logging.Formatter(LOG_FORMAT))
 logger.addHandler(console_handler)
 logger.addHandler(DatabaseHandler())
+
+
+sao_paulo_tz = timezone(timedelta(hours=-3))
 
 # Initialize FastAPI with metadata
 app = FastAPI(
@@ -94,12 +95,12 @@ async def api_error_handler(request: Request, exc: APIError) -> JSONResponse:
         }
     )
 
-@v1_router.post("/auth/login", response_model=Token, 
+@v1_router.post("/auth/login", 
                 description="Autenticar usuário e obter token de acesso",
                 tags=["Autenticação"])
 async def login(
-    usuario: str = Query(..., description="Nome do usuário", min_length=3, example="user1"),
-    senha: str = Query(..., description="Senha do usuário", example="senha123"),
+    usuario: str = Body(..., description="Nome do usuário", min_length=3, example="user1"),
+    senha: str = Body(..., description="Senha do usuário", example="p1"),
     db: Session = Depends(get_db)
 ):
     logger.debug(f"Tentativa de login para usuário: {usuario}")
@@ -114,18 +115,86 @@ async def login(
     
     logger.info(f"Login bem-sucedido para usuário: {usuario}")
     payload = {
-        "sub": user.username,
+        "username": user.username,
         "role": user.role,
-        "exp": datetime.now(timezone.utc) + timedelta(hours=TOKEN_EXPIRE_HOURS)
+        "exp": datetime.now(sao_paulo_tz) + timedelta(hours=TOKEN_EXPIRE_HOURS)
     }
     token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
     return {"access_token": token, "token_type": "bearer"}
 
-@v1_router.post("/acordao/gerar", response_model=AcordaoResponse,
+@v1_router.post("/auth/refresh",
+                description="Renovar token JWT",
+                tags=["Autenticação"])
+async def refresh_token(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    logger.debug("Tentativa de renovação de token")
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        logger.warning("Tentativa de refresh sem token")
+        raise APIError(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token não fornecido",
+            internal_code="TOKEN_MISSING"
+        )
+    
+    token = auth_header.split(" ")[1]
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        user = db.query(User).filter(User.username == payload["username"]).first()
+        if not user:
+            raise APIError(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Usuário não encontrado",
+                internal_code="USER_NOT_FOUND"
+            )
+        
+        new_payload = {
+            "username": user.username,
+            "role": user.role,
+            "exp": datetime.now(sao_paulo_tz) + timedelta(hours=TOKEN_EXPIRE_HOURS)
+        }
+        new_token = jwt.encode(new_payload, SECRET_KEY, algorithm="HS256")
+        logger.info(f"Token renovado com sucesso para usuário: {user.username}")
+        return {"access_token": new_token, "token_type": "bearer"}
+        
+    except jwt.ExpiredSignatureError:
+        logger.warning("Tentativa de refresh com token expirado")
+        raise APIError(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token expirado",
+            internal_code="TOKEN_EXPIRED"
+        )
+    except jwt.InvalidTokenError:
+        logger.warning("Tentativa de refresh com token inválido")
+        raise APIError(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido",
+            internal_code="TOKEN_INVALID"
+        )
+
+@v1_router.get("/auth/status",
+               description="Verificar status da autenticação",
+               tags=["Autenticação"])
+async def auth_status(
+    current_user: dict = Depends(check_user_access)
+):
+    logger.info(current_user)
+    logger.debug(f"Verificando status de autenticação para usuário: {current_user['username']}")
+    exp_datetime = datetime.fromtimestamp(current_user["exp"], tz=timezone.utc)
+    return {
+        "authenticated": True,
+        "username": current_user["username"],
+        "role": current_user["role"],
+        "expires": exp_datetime.isoformat()
+    }
+
+@v1_router.post("/acordao/gerar",
                 description="Gerar ementa a partir de texto do acórdão",
                 tags=["Ementas"])
 async def gerar_ementa(
-    texto: str = Query(
+    texto: str = Body(
         ..., 
         description="Texto do acórdão para gerar ementa",
         min_length=10,
@@ -135,8 +204,11 @@ async def gerar_ementa(
     _: dict = Depends(check_user_access)
 ):
     logger.debug("Iniciando geração de ementa")
+    with open("prompt.md", "r") as f:
+        texto_prompt = f.read()
+        
     resposta = litellm.completion(model=MODEL_NAME, messages=[
-        {"role": "system", "content": "Você é um especialista jurídico gerando ementas de acórdãos."},
+        {"role": "system", "content": texto_prompt},
         {"role": "user", "content": f"Gere uma ementa para este acórdão: {texto}"}
     ])
     logger.info("Ementa gerada com sucesso pelo modelo")
@@ -148,7 +220,7 @@ async def gerar_ementa(
     db.refresh(novo_acordao)
     return novo_acordao
 
-@v2_router.post("/acordao/gerar_pdf", response_model=AcordaoResponse,
+@v2_router.post("/acordao/gerar_pdf",
                 description="Gerar ementa a partir de arquivo PDF do acórdão",
                 tags=["Ementas"])
 async def gerar_ementa_pdf(
@@ -193,7 +265,7 @@ def init_database(db: Session = Depends(get_db)):
     logger.info("Inicialização do banco ignorada - já existe")
     return {"message": "Banco de dados já existe. Use force=True para recriar"}
 
-@app.post("/bootstrap", response_model=Message,
+@app.post("/bootstrap",
           description="Inicializar o sistema com usuário admin",
           tags=["Administração"])
 async def bootstrap_admin(
@@ -272,7 +344,7 @@ async def list_users(
         "limit": limit
     }
 
-@v1_router.get("/users/{user_id}", response_model=UserResponse,
+@v1_router.get("/users/{user_id}", 
                description="Obter detalhes de um usuário",
                tags=["Usuários"])
 async def get_user(
@@ -296,7 +368,7 @@ async def get_user(
         )
     return user
 
-@v1_router.post("/users", response_model=UserResponse,
+@v1_router.post("/users", 
                 description="Criar novo usuário",
                 tags=["Usuários"])
 async def create_user(
@@ -348,7 +420,7 @@ async def create_user(
             internal_code="USER_CREATION_ERROR"
         )
 
-@v1_router.put("/users/{user_id}", response_model=UserResponse,
+@v1_router.put("/users/{user_id}",
                description="Atualizar usuário",
                tags=["Usuários"])
 async def update_user(
@@ -409,7 +481,7 @@ async def update_user(
             internal_code="USER_UPDATE_ERROR"
         )
 
-@v1_router.delete("/users/{user_id}", response_model=Message,
+@v1_router.delete("/users/{user_id}", 
                   description="Excluir usuário",
                   tags=["Usuários"])
 async def delete_user(
@@ -491,7 +563,6 @@ async def update_acordao_feedback(
 
 @v1_router.delete("/acordaos/{acordao_id}",
                   description="Excluir acórdão",
-                  response_model=Message,
                   tags=["Ementas"])
 async def delete_acordao(
     acordao_id: int = Path(
