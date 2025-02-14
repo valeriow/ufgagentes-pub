@@ -128,7 +128,7 @@ pytest tests/
 
 ## Deploy
 
-### Docker
+### Docker (em desenvolvimento!)
 
 #### Preparação do Ambiente
 
