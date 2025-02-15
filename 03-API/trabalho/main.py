@@ -15,6 +15,7 @@ import textwrap
 
 
 # Import settings and database
+from models.acordaos import AcordaoRequest
 from settings import (
     API_TITLE, SECRET_KEY, MODEL_NAME, INSTALL_KEY,
     TOKEN_EXPIRE_HOURS, LOG_LEVEL, LOG_FORMAT
@@ -194,22 +195,17 @@ async def auth_status(
                 description="Gerar ementa a partir de texto do acórdão",
                 tags=["Ementas"])
 async def gerar_ementa(
-    texto: str = Body(
-        ..., 
-        description="Texto do acórdão para gerar ementa",
-        min_length=10,
-        example="O relator apresentou voto no sentido de..."
-    ),
+    texto: str = Body(..., description="Texto do acórdão", min_length=3, media_type="text/plain"),
     db: Session = Depends(get_db),
     _: dict = Depends(check_user_access)
-):
+    ):
     logger.debug("Iniciando geração de ementa")
     with open("prompt.md", "r") as f:
         texto_prompt = f.read()
         
     resposta = litellm.completion(model=MODEL_NAME, messages=[
-        {"role": "system", "content": texto_prompt},
-        {"role": "user", "content": f"Gere uma ementa para este acórdão: {texto}"}
+        {"role": "system", "content": texto_prompt.replace('"', '\\"').replace('`', '\\`')},
+        {"role": "user", "content": f"Gere uma ementa para este acórdão: {texto.replace('"', '\\"').replace('`', '\\`')}"}
     ])
     logger.info("Ementa gerada com sucesso pelo modelo")
     logger.debug(f"Resposta do modelo: {resposta['choices'][0]['message']['content'][:100]}...")
