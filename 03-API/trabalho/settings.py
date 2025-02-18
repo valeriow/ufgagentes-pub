@@ -22,7 +22,7 @@ LOG_DATABASE_URL = "sqlite:///log.db"
 MODEL_NAME = os.getenv("LITELLM_MODEL", "gpt-4o-mini")
 
 # Logging Settings
-LOG_LEVEL = "INFO"
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 LOG_FORMAT = '%(asctime)s - %(levelname)s - %(message)s'
 
 # Security Settings
