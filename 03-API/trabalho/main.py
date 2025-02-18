@@ -216,6 +216,32 @@ async def gerar_ementa(
     db.refresh(novo_acordao)
     return novo_acordao
 
+@v1_router.post("/acordao/verificar",
+                description="Verificar se ementa está de acordo com o Manual de Padronização de Ementas do CNJ",
+                tags=["Ementas"])
+async def verificar_ementa(
+    texto: str = Body(..., description="Texto da ementa", min_length=3, media_type="text/plain"),
+    db: Session = Depends(get_db),
+    _: dict = Depends(check_user_access)
+    ):
+    logger.debug("Iniciando verificação de ementa")
+    with open("prompt_verificacao.md", "r") as f:
+        texto_prompt = f.read()
+        
+    resposta = litellm.completion(model=MODEL_NAME, messages=[
+        {"role": "system", "content": texto_prompt.replace('"', '\\"').replace('`', '\\`')},
+        {"role": "user", "content": f"Verifique a seguinte ementa: {texto.replace('"', '\\"').replace('`', '\\`')}"}
+    ])
+    logger.info("Ementa verificada com sucesso pelo modelo")
+    logger.debug(f"Resposta do modelo: {resposta['choices'][0]['message']['content'][:100]}...")
+    ementa = resposta["choices"][0]["message"]["content"]
+    #novo_acordao = Acordao(texto=texto, ementa=ementa)
+    #db.add(novo_acordao)
+    #db.commit()
+    #db.refresh(novo_acordao)
+    return ementa
+
+
 @v2_router.post("/acordao/gerar_pdf",
                 description="Gerar ementa a partir de arquivo PDF do acórdão",
                 tags=["Ementas"])
