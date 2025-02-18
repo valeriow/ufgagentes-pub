@@ -31,6 +31,11 @@ from models import (
 
 from auth import check_admin_access, check_user_access
 
+from models.schemas import (
+    LoginRequest, UserCreate, UserUpdate, 
+    AcordaoCreate, AcordaoFeedback, BootstrapRequest
+)
+
 # Configure logging
 logger = logging.getLogger("API")
 logger.setLevel(getattr(logging, LOG_LEVEL))
@@ -100,21 +105,20 @@ async def api_error_handler(request: Request, exc: APIError) -> JSONResponse:
                 description="Autenticar usuário e obter token de acesso",
                 tags=["Autenticação"])
 async def login(
-    usuario: str = Body(..., description="Nome do usuário", min_length=3, example="user1"),
-    senha: str = Body(..., description="Senha do usuário", example="p1"),
+    credentials: LoginRequest,
     db: Session = Depends(get_db)
 ):
-    logger.debug(f"Tentativa de login para usuário: {usuario}")
-    user = db.query(User).filter(User.username == usuario).first()
-    if not user or not pwd_context.verify(senha, user.password):
-        logger.info(f"Falha na autenticação para usuário: {usuario}")
+    logger.debug(f"Tentativa de login para usuário: {credentials.usuario}")
+    user = db.query(User).filter(User.username == credentials.usuario).first()
+    if not user or not pwd_context.verify(credentials.senha, user.password):
+        logger.info(f"Falha na autenticação para usuário: {credentials.usuario}")
         raise APIError(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Credenciais inválidas",
             internal_code="INVALID_CREDENTIALS"
         )
     
-    logger.info(f"Login bem-sucedido para usuário: {usuario}")
+    logger.info(f"Login bem-sucedido para usuário: {credentials.usuario}")
     payload = {
         "username": user.username,
         "role": user.role,
@@ -195,7 +199,7 @@ async def auth_status(
                 description="Gerar ementa a partir de texto do acórdão",
                 tags=["Ementas"])
 async def gerar_ementa(
-    texto: str = Body(..., description="Texto do acórdão", min_length=3, media_type="text/plain"),
+    acordao: AcordaoCreate,
     db: Session = Depends(get_db),
     _: dict = Depends(check_user_access)
     ):
@@ -205,12 +209,12 @@ async def gerar_ementa(
         
     resposta = litellm.completion(model=MODEL_NAME, messages=[
         {"role": "system", "content": texto_prompt.replace('"', '\\"').replace('`', '\\`')},
-        {"role": "user", "content": f"Gere uma ementa para este acórdão: {texto.replace('"', '\\"').replace('`', '\\`')}"}
+        {"role": "user", "content": f"Gere uma ementa para este acórdão: {acordao.texto.replace('"', '\\"').replace('`', '\\`')}"}
     ])
     logger.info("Ementa gerada com sucesso pelo modelo")
     logger.debug(f"Resposta do modelo: {resposta['choices'][0]['message']['content'][:100]}...")
     ementa = resposta["choices"][0]["message"]["content"]
-    novo_acordao = Acordao(texto=texto, ementa=ementa)
+    novo_acordao = Acordao(texto=acordao.texto, ementa=ementa)
     db.add(novo_acordao)
     db.commit()
     db.refresh(novo_acordao)
@@ -291,21 +295,16 @@ def init_database(db: Session = Depends(get_db)):
           description="Inicializar o sistema com usuário admin",
           tags=["Administração"])
 async def bootstrap_admin(
-    install_key: str = Body(
-        ..., 
-        description="Chave de instalação do sistema",
-        min_length=8,
-        example="sua-chave-secreta"
-    ),
+    request: BootstrapRequest,
     db: Session = Depends(get_db)
 ):
     logger.info("Iniciando processo de bootstrap")
-    if install_key != INSTALL_KEY:
+    if request.install_key != INSTALL_KEY:
         logger.warning("Tentativa de bootstrap com chave inválida")
         raise APIError(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Chave de instalação inválida",
-            internal_code="INVALID_INSTALL_KEY"
+            internal_code="INVALID_INSTALL_KEY" 
         )
 
     try:
@@ -394,32 +393,14 @@ async def get_user(
                 description="Criar novo usuário",
                 tags=["Usuários"])
 async def create_user(
-    username: str = Query(
-        ..., 
-        description="Nome de usuário",
-        min_length=3,
-        max_length=50,
-        example="novousuario"
-    ),
-    password: str = Query(
-        ..., 
-        description="Senha do usuário",
-        min_length=6,
-        example="senha123"
-    ),
-    role: str = Query(
-        default="user",
-        description="Papel do usuário (admin ou user)",
-        regex="^(admin|user)$",
-        example="user"
-    ),
+    user: UserCreate,
     db: Session = Depends(get_db),
     _: dict = Depends(check_admin_access)
 ):
-    logger.info(f"Tentativa de criar novo usuário: {username}")
-    existing = db.query(User).filter(User.username == username).first()
+    logger.info(f"Tentativa de criar novo usuário: {user.username}")
+    existing = db.query(User).filter(User.username == user.username).first()
     if existing:
-        logger.warning(f"Tentativa de criar usuário com username duplicado: {username}")
+        logger.warning(f"Tentativa de criar usuário com username duplicado: {user.username}")
         raise APIError(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Username já existe",
@@ -427,15 +408,15 @@ async def create_user(
         )
     
     try:
-        hashed_password = pwd_context.hash(password)
-        new_user = User(username=username, password=hashed_password, role=role)
+        hashed_password = pwd_context.hash(user.password)
+        new_user = User(username=user.username, password=hashed_password, role=user.role)
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
-        logger.info(f"Usuário criado com sucesso: {username}")
+        logger.info(f"Usuário criado com sucesso: {user.username}")
         return new_user
     except Exception as e:
-        logger.error(f"Erro ao criar usuário {username}: {str(e)}")
+        logger.error(f"Erro ao criar usuário {user.username}: {str(e)}")
         raise APIError(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Erro ao criar usuário",
@@ -446,30 +427,12 @@ async def create_user(
                description="Atualizar usuário",
                tags=["Usuários"])
 async def update_user(
+    user: UserUpdate,
     user_id: int = Path(
         ..., 
         description="ID do usuário",
         gt=0,
         example=1
-    ),
-    username: str = Query(
-        ..., 
-        description="Nome de usuário",
-        min_length=3,
-        max_length=50,
-        example="novousuario"
-    ),
-    password: str = Query(
-        None, 
-        description="Nova senha (opcional)",
-        min_length=6,
-        example="novasenha123"
-    ),
-    role: str = Query(
-        default="user",
-        description="Papel do usuário (admin ou user)",
-        regex="^(admin|user)$",
-        example="user"
     ),
     db: Session = Depends(get_db),
     _: dict = Depends(check_admin_access)
@@ -485,12 +448,12 @@ async def update_user(
         )
     
     try:
-        if password:
-            db_user.password = pwd_context.hash(password)
+        if user.password:
+            db_user.password = pwd_context.hash(user.password)
             logger.debug(f"Senha atualizada para usuário {user_id}")
         
-        db_user.username = username
-        db_user.role = role
+        db_user.username = user.username
+        db_user.role = user.role
         db.commit()
         db.refresh(db_user)
         logger.info(f"Usuário {user_id} atualizado com sucesso")
@@ -543,18 +506,12 @@ async def delete_user(
                description="Atualizar feedback do acórdão",
                tags=["Ementas"])
 async def update_acordao_feedback(
+    feedback: AcordaoFeedback,
     acordao_id: int = Path(
         ..., 
         description="ID do acórdão",
         gt=0,
         example=1
-    ),
-    feedback: str = Query(
-        ...,
-        description="Feedback sobre a ementa gerada",
-        min_length=1,
-        max_length=1000,
-        example="Ementa gerada com sucesso e adequada ao conteúdo"
     ),
     db: Session = Depends(get_db),
     _: dict = Depends(check_admin_access)
@@ -570,7 +527,7 @@ async def update_acordao_feedback(
                 internal_code="ACORDAO_NOT_FOUND"
             )
         
-        acordao.feedback = feedback
+        acordao.feedback = feedback.feedback
         db.commit()
         db.refresh(acordao)
         logger.info(f"Feedback atualizado com sucesso para acórdão {acordao_id}")
