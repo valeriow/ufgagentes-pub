@@ -52,6 +52,18 @@ Ajuste as configurações no arquivo `settings.py`:
 - `SECRET_KEY`: Chave secreta para JWT
 - `MODEL_NAME`: Nome do modelo LLM a ser usado
 - `LOG_LEVEL`: Nível de logging desejado
+- `INSTALL_KEY`: Chave para inicialização do sistema
+
+## Primeira Utilização
+
+1. Inicie o servidor conforme descrito na seção de Uso
+
+2. Inicialize o sistema chamando o endpoint `/bootstrap`. Este é o único endpoint que não requer autenticação, pois é usado para criar o banco de dados inicial e o primeiro usuário admin:
+
+Exemplo com curl:
+```sh
+curl -X POST "http://localhost:8000/bootstrap" -H "accpt: application/json" -d "chave-secreta-instalacao"
+```
 
 ## Uso
 
@@ -76,33 +88,32 @@ uvicorn main:app --reload
 
 ### Autenticação
 
-- `POST /auth/login` - Fazer login e obter token JWT
-- `POST /auth/refresh` - Renovar token JWT
-- `GET /auth/status` - Verificar status da autenticação
+- `POST /v1/auth/login` - Fazer login e obter token JWT
+- `POST /v1/auth/refresh` - Renovar token JWT
+- `GET /v1/auth/status` - Verificar status da autenticação
 
 ### Usuários
 
-- `POST /users/` - Criar novo usuário
-- `GET /users/me` - Obter dados do usuário atual
-- `GET /users/{id}` - Obter usuário por ID
-- `PUT /users/{id}` - Atualizar usuário
-- `DELETE /users/{id}` - Deletar usuário
-- `GET /users/` - Listar todos usuários (admin)
+- `GET /v1/users` - Listar todos usuários (paginado)
+- `GET /v1/users/{user_id}` - Obter usuário por ID
+- `POST /v1/users` - Criar novo usuário (admin)
+- `PUT /v1/users/{user_id}` - Atualizar usuário (admin)
+- `DELETE /v1/users/{user_id}` - Deletar usuário (admin)
 
 ### Ementas
 
-- `POST /ementas/text` - Gerar ementa a partir de texto
-- `POST /ementas/pdf` - Gerar ementa a partir de PDF
-- `GET /ementas/{id}` - Obter ementa por ID
-- `GET /ementas/` - Listar todas ementas
-- `DELETE /ementas/{id}` - Deletar ementa
-- `PUT /ementas/{id}` - Atualizar ementa
+- `POST /v1/acordao/gerar` - Gerar ementa a partir de texto
+- `POST /v1/ementa/verificar` - Verificar conformidade da ementa com Manual CNJ
+- `POST /v2/acordao/gerar_pdf` - Gerar ementa a partir de PDF
+- `GET /v1/acordaos` - Listar todos acórdãos (paginado)
+- `PUT /v1/acordaos/{acordao_id}/feedback` - Atualizar feedback (admin)
+- `DELETE /v1/acordaos/{acordao_id}` - Deletar acórdão (admin)
 
 ### Sistema
 
 - `GET /health` - Verificar status do sistema
-- `GET /metrics` - Obter métricas do sistema (admin)
-- `GET /logs` - Consultar logs do sistema (admin)
+- `GET /v1/logs` - Consultar logs do sistema (admin, paginado)
+- `POST /bootstrap` - Inicializar sistema com usuário admin
 
 ## Logging
 
@@ -114,17 +125,9 @@ Os logs do sistema são armazenados em:
 
 - Autenticação via JWT
 - Roles: admin e user  
-- Rate limiting por IP
-- CORS configurável
 - Sanitização de inputs
 - Validação de schema
 
-## Testes
-
-Execute os testes:
-```sh
-pytest tests/
-```
 
 ## Deploy
 

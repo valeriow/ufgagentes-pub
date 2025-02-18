@@ -216,7 +216,7 @@ async def gerar_ementa(
     db.refresh(novo_acordao)
     return novo_acordao
 
-@v1_router.post("/acordao/verificar",
+@v1_router.post("/ementa/verificar",
                 description="Verificar se ementa está de acordo com o Manual de Padronização de Ementas do CNJ",
                 tags=["Ementas"])
 async def verificar_ementa(
@@ -291,7 +291,7 @@ def init_database(db: Session = Depends(get_db)):
           description="Inicializar o sistema com usuário admin",
           tags=["Administração"])
 async def bootstrap_admin(
-    install_key: str = Query(
+    install_key: str = Body(
         ..., 
         description="Chave de instalação do sistema",
         min_length=8,
