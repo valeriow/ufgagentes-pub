@@ -7,8 +7,8 @@ load_dotenv()
 
 
 # API Settings
-API_TITLE = "API de Geração de Ementas de Acórdãos"
-API_VERSION = "v1"
+API_TITLE = os.getenv("API_TITLE","API de Geração de Ementas de Acórdãos")
+
 
 # Security Settings
 SECRET_KEY = os.getenv("SECRET_KEY", "sua_chave_secreta")
