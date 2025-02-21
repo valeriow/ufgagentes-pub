@@ -199,7 +199,7 @@ async def auth_status(
                 description="Gerar ementa a partir de texto do acórdão",
                 tags=["Ementas"])
 async def gerar_ementa(
-    acordao: AcordaoCreate,
+    texto: str = Body(..., description="Texto do acórdão", min_length=3, media_type="text/plain"),
     db: Session = Depends(get_db),
     _: dict = Depends(check_user_access)
     ):
