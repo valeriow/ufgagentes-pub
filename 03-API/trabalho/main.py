@@ -199,7 +199,7 @@ async def auth_status(
                 description="Gerar ementa a partir de texto do acórdão",
                 tags=["Ementas"])
 async def gerar_ementa(
-    texto: str = Body(..., description="Texto do acórdão", min_length=3, media_type="text/plain"),
+    acordao: str = Body(..., description="Texto do acórdão", min_length=3, media_type="text/plain"),
     db: Session = Depends(get_db),
     _: dict = Depends(check_user_access)
     ):
@@ -209,12 +209,12 @@ async def gerar_ementa(
         
     resposta = litellm.completion(model=MODEL_NAME, messages=[
         {"role": "system", "content": texto_prompt.replace('"', '\\"').replace('`', '\\`')},
-        {"role": "user", "content": f"Gere uma ementa para este acórdão: {acordao.texto.replace('"', '\\"').replace('`', '\\`')}"}
+        {"role": "user", "content": f"Gere uma ementa para este acórdão: {acordao.replace('"', '\\"').replace('`', '\\`')}"}
     ])
     logger.info("Ementa gerada com sucesso pelo modelo")
     logger.debug(f"Resposta do modelo: {resposta['choices'][0]['message']['content'][:100]}...")
     ementa = resposta["choices"][0]["message"]["content"]
-    novo_acordao = Acordao(texto=acordao.texto, ementa=ementa)
+    novo_acordao = Acordao(texto=acordao, ementa=ementa)
     db.add(novo_acordao)
     db.commit()
     db.refresh(novo_acordao)

@@ -1,0 +1,21 @@
+title,rank,rank_change,top_rank,platforms,type
+Dept. Q,1.0,0.0,1,"Netflix, Netflix Standard with Ads",tv-shows
+Murderbot,2.0,2.0,1,"Apple TV+, Apple TV Plus Amazon Channel",tv-shows
+Revival,3.0,90.0,3,"fuboTV, Peacock Premium, Spectrum On Demand",tv-shows
+Stick,4.0,-2.0,2,"Amazon Prime Video, Apple TV+, Apple TV Plus Amazon Channel",tv-shows
+Poker Face,5.0,0.0,2,"Peacock Premium, Peacock Premium Plus, Amazon Video",tv-shows
+Andor,6.0,3.0,1,"Disney Plus, Hulu",tv-shows
+Resident Alien,7.0,-4.0,1,"Peacock Premium, Peacock Premium Plus, Amazon Video",tv-shows
+FUBAR,8.0,12.0,3,"Netflix, Netflix Standard with Ads",tv-shows
+The Better Sister,9.0,1.0,2,"Amazon Prime Video, Amazon Prime Video Free with Ads, Amazon Prime Video with Ads",tv-shows
+MobLand,10.0,-4.0,1,"fuboTV, Paramount Plus, Paramount Plus Apple TV Channel ",tv-shows
+Deep Cover,1.0,181.0,1,"Amazon Prime Video, Amazon Prime Video with Ads",movies
+28 Weeks Later,2.0,8.0,2,"Hulu, Tubi TV, Amazon Video",movies
+The Accountant²,3.0,-1.0,1,"Amazon Prime Video, Amazon Prime Video with Ads",movies
+Echo Valley,4.0,73.0,4,"Apple TV+, Apple TV Plus Amazon Channel",movies
+How to Train Your Dragon,5.0,23.0,5,"Max, Max Amazon Channel, Peacock Premium",movies
+Mickey 17,6.0,2.0,1,"Max, Max Amazon Channel, Apple TV",movies
+Predator: Killer of Killers,7.0,-5.0,3,Hulu,movies
+A Minecraft Movie,8.0,7.0,3,"Max, Max Amazon Channel, Amazon Video",movies
+Cleaner,9.0,224.0,9,"Max, Max Amazon Channel, Kanopy",movies
+STRAW,10.0,-6.0,5,"Netflix, Netflix Standard with Ads",movies
