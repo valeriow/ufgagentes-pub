@@ -1,6 +1,9 @@
 # Extração Automática de Dados - Pós-graduação Agentes e Sistemas Inteligentes - UFG
 
-# Tema: Streaming buzz (JustWatch × Google Notícias)
+# Tema: Streaming buzz (JustWatch × Google Notícias). 
+
+## Do Hype à Tela: Como Notícias Impactam Rankings de Filmes e Séries.
+
 
 Nome: Valério Viégas Wittler - valeriow@gmail.com
 
