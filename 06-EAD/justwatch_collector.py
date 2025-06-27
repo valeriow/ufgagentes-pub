@@ -155,7 +155,7 @@ class JustWatchCollector:
             driver.quit()
             driver_detail.quit()
 
-    def collect_ranking(self, type, rank_freq="weekly", max_titles=20):
+    def collect_ranking(self, type, rank_freq="daily", max_titles=20):
         """
         Collect ranking data from JustWatch.
         

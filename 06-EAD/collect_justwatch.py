@@ -40,7 +40,7 @@ def collect_just_watch_ranking(max_titles=10, headless=True):
     all_justwatch_data = []
     for content_type in content_types:
         just_watch_collector = JustWatchCollector(country="us", content_type=content_type, headless=headless)
-        just_watch_df = just_watch_collector.collect_ranking(content_type, rank_freq="weekly", max_titles=max_titles) 
+        just_watch_df = just_watch_collector.collect_ranking(content_type, rank_freq="daily", max_titles=max_titles) 
         just_watch_df['type'] = content_type  # Add content type column : series or movies
         all_justwatch_data.extend(just_watch_df.to_dict(orient='records'))
 
