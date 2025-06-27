@@ -8,7 +8,7 @@
 
 - Vídeo de apresentação: https://youtu.be/GwGZFUnN9w8
 
-- Powerpoint: [06-EAD/TrabalhoFinalEAD-ValérioViégasWittler.pptx](https://github.com/valeriow/ufgagentes-pub/raw/refs/heads/main/06-EAD/TrabalhoFinalEAD-Val%C3%A9rioVi%C3%A9gasWittler.pptx)
+- Apresentação: https://github.com/valeriow/ufgagentes-pub/blob/main/06-EAD/TrabalhoFinalEAD-Val%C3%A9rioVi%C3%A9gasWittler.pdf
 
 
 
