@@ -4,8 +4,14 @@
 
 ## Do Hype à Tela: Como Notícias Impactam Rankings de Filmes e Séries.
 
+- Nome: Valério Viégas Wittler - valeriow@gmail.com
 
-Nome: Valério Viégas Wittler - valeriow@gmail.com
+- Vídeo de apresentação: https://youtu.be/GwGZFUnN9w8
+
+- Powerpoint: [06-EAD/TrabalhoFinalEAD-ValérioViégasWittler.pptx](https://github.com/valeriow/ufgagentes-pub/raw/refs/heads/main/06-EAD/TrabalhoFinalEAD-Val%C3%A9rioVi%C3%A9gasWittler.pptx)
+
+
+
 
 
 ## Introdução
